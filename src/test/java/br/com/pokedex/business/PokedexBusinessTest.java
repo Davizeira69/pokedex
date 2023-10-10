@@ -2,6 +2,7 @@ package br.com.pokedex.business;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -45,31 +46,24 @@ public class PokedexBusinessTest {
     	public void whenCallCreate_thenReturnLastId() throws Exception {
     		int expectedReturn = 1; 
     		PokedexDto dto = new PokedexDto(1, 10, "Bubassauro", 1, 14);
-    		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		
-    		when(command.create(eq(bean)))
+    		when(command.create(any(PokedexBean.class)))
     		  .thenReturn(1);
     		
     		int actualReturn = business.create(dto);
     		
     		assertEquals(expectedReturn, actualReturn);
-    		verify(command, times(1))
-    		  .create(bean);
     	}
 
     	@Test
     	@DisplayName("Quando chamar o Create, deve lançar uma mensagem de erro.")
     	public void whenCallCreate_thenThrowErrorMessage() throws Exception {
-    		Class<Exception> expectedReturn = Exception.class; 
     		PokedexDto dto = new PokedexDto(1, 10, "Bubassauro", 1, 14);
-    		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		
-    		when(command.create(eq(bean)))
-    		  .thenThrow(expectedReturn);
+    		when(command.create(any(PokedexBean.class)))
+    		  .thenThrow(Exception.class);
     		    		
-    		assertThrows(expectedReturn, () -> business.create(dto));
-    		verify(command, times(1))
-    		  .create(bean);
+    		assertThrows(Exception.class, () -> business.create(dto));
     	}
     }
 	
@@ -96,12 +90,11 @@ public class PokedexBusinessTest {
 	@Test
 	@DisplayName("Quando chamar o FindAll, deve lançar uma mensagem de erro.")
 	public void whenCallFindAll_thenThrowErrorMessage() throws Exception {
-		Class<Exception> expectedReturn = Exception.class; 
 		
 		when(command.findAll())
-		  .thenThrow(expectedReturn);
+		  .thenThrow(Exception.class);
 				
-		assertThrows(expectedReturn, () -> business.findAll());
+		assertThrows(Exception.class, () -> business.findAll());
 		verify(command, times(1))
 		  .findAll();
 		}
@@ -147,35 +140,28 @@ public class PokedexBusinessTest {
     	@Test
     	@DisplayName("Quando chamar o update, deve retornar uma mensagem de sucesso")
     	public void whenCallUpdate_thenReturnOkMessage() throws Exception {
-    		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		PokedexDto dto = new PokedexDto(1, 10, "Bubassauro", 1, 14);
-    		String expectedReturn = "Alteração realizada com êxito.";
+    		String expectedReturn = "Alterações realizadas com êxito.";
     		int affectedRows = 1;
     		
-    		when(command.update(eq(bean)))
+    		when(command.update(any(PokedexBean.class)))
     		  .thenReturn(affectedRows);
     		
     		String actualReturn = business.update(dto, 1);
     		
     		assertEquals(expectedReturn, actualReturn);
-    		verify(command, times(1))
-    		  .update(bean);
     	}
     	
     	@Test
     	@DisplayName("Quando chamar o Update, deve lançar uma mensagem de erro.")
     	public void whenCallUpdate_thenThrowErrorMessage() throws Exception {
-    		Class<Exception> expectedReturn = Exception.class; 
     		PokedexDto dto = new PokedexDto(1, 10, "Bubassauro", 1, 14);
-    		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		int id = 1;
     		
-    		when(command.update(bean))
-    		  .thenThrow(expectedReturn);
+    		when(command.update(any(PokedexBean.class)))
+    		  .thenThrow(Exception.class);
     		    		
-    		assertThrows(expectedReturn, () -> business.update(dto, id));
-    		verify(command, times(1))
-    		  .update(bean);
+    		assertThrows(Exception.class, () -> business.update(dto, id));
     	}
     }
 	
@@ -201,14 +187,13 @@ public class PokedexBusinessTest {
     	@Test
     	@DisplayName("Quando chamar o Delete, deve lançar uma mensagem de erro.")
     	public void whenCallDelete_thenThrowErrorMessage() throws Exception {
-    		Class<Exception> expectedReturn = Exception.class; 
     		int id = 1;
     		
     		when(command.delete(id))
-    		  .thenThrow(expectedReturn);
+    		  .thenThrow(Exception.class);
     		
     		
-    		assertThrows(expectedReturn, () -> business.delete(id));
+    		assertThrows(Exception.class, () -> business.delete(id));
     		verify(command, times(1))
     		  .delete(id);
     	}

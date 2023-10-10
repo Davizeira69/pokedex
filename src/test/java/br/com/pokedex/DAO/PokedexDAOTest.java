@@ -1,4 +1,4 @@
-package br.com.pokedex.command;
+package br.com.pokedex.DAO;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,6 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -16,29 +18,28 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import br.com.pokedex.bean.PokedexBean;
-import br.com.pokedex.dao.PokedexDAOJdbc;
+import br.com.pokedex.dao.test.IPokedexDAO;
 import br.com.pokedex.dto.PokedexDto;
-import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import jakarta.inject.Inject;
 
 @QuarkusTest
-public class PokedexCommandTest {
-	
-	
+public class PokedexDAOTest {
+
 	@Inject
-	PokedexCommand command;
+	IPokedexDAO dao;
 	
-	@InjectMock
-	PokedexDAOJdbc dao;
+	static PreparedStatement pst;
+	
+	static ResultSet rs;
 	
 	@BeforeAll
 	public static void setUp() {
-		PokedexDAOJdbc dao = mock(PokedexDAOJdbc.class);
-		QuarkusMock.installMockForType(dao, PokedexDAOJdbc.class);
+		pst = mock(PreparedStatement.class);
+		
+		rs = mock(ResultSet.class);
 	}
-	 
+	
 	@Nested
     @DisplayName("Testes do Create")
     class WhenCreate {
@@ -48,10 +49,10 @@ public class PokedexCommandTest {
     		int expectedReturn = 1; 
     		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		
-    		when(dao.insert(any(Connection.class), any(PokedexBean.class)))
-    		  .thenReturn(1);
+    		when(pst.execute()).thenReturn(true);
+    		when(rs.getInt(1)).thenReturn(1);
     		
-    		int actualReturn = command.create(bean);
+    		int actualReturn = dao.insert(any(Connection.class), bean);
     		
     		assertEquals(expectedReturn, actualReturn);
     	}
@@ -61,10 +62,12 @@ public class PokedexCommandTest {
     	public void whenCallCreate_thenThrowErrorMessage() throws Exception {
     		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		
-    		when(dao.insert(any(Connection.class), any(PokedexBean.class)))
+    		when(pst.execute())
+    		  .thenThrow(Exception.class);
+    		when(rs.getInt(1))
     		  .thenThrow(Exception.class);
     		    		
-    		assertThrows(Exception.class, () -> command.create(bean));
+    		assertThrows(Exception.class, () -> dao.insert(any(Connection.class), bean));
     	}
     }
 	
@@ -75,12 +78,11 @@ public class PokedexCommandTest {
     	@DisplayName("Quando chamar o FindAll, deve retornar todos os dtos.")
     	public void whenCallFindAll_thenReturnAllDtos() throws Exception {
     		PokedexDto dto = new PokedexDto(1, 10, "Bubassauro", 1, 14);
-    		List<PokedexDto> expectedReturn = List.of(dto); 
+    		List<PokedexDto> expectedReturn = List.of(dto);
     		
-    		when(dao.findAll(any(Connection.class)))
-    		  .thenReturn(expectedReturn);
+    		when(rs.next()).thenReturn(true);
     		
-    		List<PokedexDto> actualReturn = command.findAll();
+    		List<PokedexDto> actualReturn = dao.findAll(any(Connection.class));
     		
     		assertEquals(expectedReturn, actualReturn);
     	}
@@ -89,10 +91,9 @@ public class PokedexCommandTest {
     	@DisplayName("Quando chamar o findAll, deve lançar uma mensagem de erro.")
     	public void whenCallFindAll_thenThrowErrorMessage() throws Exception {
     		
-    		when(dao.findAll(any(Connection.class)))
-    		  .thenThrow(Exception.class);
+    		when(rs.next()).thenThrow(Exception.class);
     		    		
-    		assertThrows(Exception.class, () -> command.findAll());
+    		assertThrows(Exception.class, () -> dao.findAll(any(Connection.class)));
     	}
     }
 	
@@ -102,12 +103,12 @@ public class PokedexCommandTest {
     	@Test
     	@DisplayName("Quando chamar o findById, deve retornar o dto do id requisitado.")
     	public void whenCallFindByid_thenReturnDtoOfId() throws Exception {
-    		PokedexDto expectedReturn = new PokedexDto(1, 10, "Bubassauro", 1, 14);; 
+    		PokedexDto expectedReturn = new PokedexDto(1, 10, "Bubassauro", 1, 14);
     		
-    		when(dao.findById(any(Connection.class), eq(1)))
-    		  .thenReturn(expectedReturn);
+    		when(pst.executeQuery()).thenReturn(rs);
+    		when(rs.next()).thenReturn(true);
     		
-    		PokedexDto actualReturn = command.findById(1);
+    		PokedexDto actualReturn = dao.findById(any(Connection.class), 1);
     		
     		assertEquals(expectedReturn, actualReturn);
     	}
@@ -115,10 +116,11 @@ public class PokedexCommandTest {
     	@Test
     	@DisplayName("Quando chamar o FindById, deve lançar uma mensagem de erro.")
     	public void whenCallFindById_thenThrowErrorMessage() throws Exception {
-    		when(dao.findById(any(Connection.class), eq(1)))
-    		  .thenThrow(Exception.class);
+    		
+    		when(pst.executeQuery()).thenThrow(Exception.class);
+    		when(rs.next()).thenThrow(Exception.class);
     		    		
-    		assertThrows(Exception.class, () -> command.findById(1));
+    		assertThrows(Exception.class, () -> dao.findById(any(Connection.class), 1));
     	}
     }
 	
@@ -131,10 +133,9 @@ public class PokedexCommandTest {
     		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		int expectedReturn = 1;
     		
-    		when(dao.update(any(Connection.class), any(PokedexBean.class)))
-    		  .thenReturn(1);
+    		when(pst.executeUpdate()).thenReturn(1);
     		
-    		int actualReturn = command.update(bean);
+    		int actualReturn = dao.update(any(Connection.class), bean);
     		
     		assertEquals(expectedReturn, actualReturn);
     	}
@@ -144,10 +145,9 @@ public class PokedexCommandTest {
     	public void whenCallUpdate_thenThrowErrorMessage() throws Exception {
     		PokedexBean bean = new PokedexBean(1, 10, "Bubassauro", 1, 14);
     		
-    		when(dao.update(any(Connection.class), any(PokedexBean.class)))
-    		  .thenThrow(Exception.class);
+    		when(pst.executeUpdate()).thenThrow(Exception.class);
     		    		
-    		assertThrows(Exception.class, () -> command.update(bean));
+    		assertThrows(Exception.class, () -> dao.update(any(Connection.class), bean));
     	}
     }
 	
@@ -162,7 +162,7 @@ public class PokedexCommandTest {
     		when(dao.delete(any(Connection.class), eq(expectedReturn)))
     		  .thenReturn(1);
     		
-    		int actualReturn = command.delete(1);
+    		int actualReturn = dao.delete(any(Connection.class), 1);
     		
     		assertEquals(expectedReturn, actualReturn);
     	}
@@ -171,10 +171,10 @@ public class PokedexCommandTest {
     	@DisplayName("Quando chamar o Update, deve lançar uma mensagem de erro.")
     	public void whenCallUpdate_thenThrowErrorMessage() throws Exception {
     		
-    		when(dao.delete(any(Connection.class), eq(1)))
-    		  .thenThrow(Exception.class);
+    		when(pst.executeUpdate()).thenReturn(1);
     		    		
-    		assertThrows(Exception.class, () -> command.delete(1));
+    		assertThrows(Exception.class, () -> dao.delete(any(Connection.class), 1));
     	}
     }
+
 }

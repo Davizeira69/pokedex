@@ -5,10 +5,14 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import br.com.pokedex.business.PokedexBusiness;
+import br.com.pokedex.config.SecurityConfig;
 import br.com.pokedex.dto.PokedexDto;
 import br.com.pokedex.dto.ResponseDto;
+import br.com.pokedex.dto.TokenDto;
 import br.com.pokedex.exceptions.ConflictException;
 import br.com.pokedex.exceptions.NotFoundException;
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -21,6 +25,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+@Authenticated
 @Path("/pokedex")
 @Tag(name = "Pokedex", description = "Catálogo dos pokemon.")
 public class PokedexController {
@@ -28,6 +33,23 @@ public class PokedexController {
 	@Inject
 	PokedexBusiness business;
 
+	@POST
+	@Path("/token")
+	@PermitAll
+	public Response generateToken(TokenDto dto) {
+		TokenDto authenticated = new TokenDto("Davizeira69", "Fabiola01#");
+		
+		try {
+			if (!dto.equals(authenticated)) {
+				return Response.status(Status.UNAUTHORIZED).entity(new ResponseDto<>(null, "Usuário não permitido.")).build();
+			} 
+			dto.setAccessToken(SecurityConfig.generateToken());
+		} catch (Exception e) {
+			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ResponseDto<>(null, e.getMessage())).build();
+		}
+		return Response.ok(new ResponseDto<TokenDto>(dto, null)).build();
+	}
+	
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response create(PokedexDto dto) {
